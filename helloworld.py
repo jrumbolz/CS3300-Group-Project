@@ -5,8 +5,8 @@ print("hello world!")
 print("I am broke af please help")
 print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah")
 print("test")
-<<<<<<< HEAD
+# <<<<<<< HEAD
 print("this is Tony")
-=======
 print("testing - SL")
->>>>>>> bf7cf0e1a183e8d3b27d4ba5c693b023292be021
+print("meeeeowwww")
+# >>>>>>> bf7cf0e1a183e8d3b27d4ba5c693b023292be021
