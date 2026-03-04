@@ -1,10 +1,11 @@
 import os
 
 
-folder_path = 'C:\Users\Jedidiah Rumbolz\OneDrive - University of Colorado Colorado Springs\Desktop\MoneyMentor\Data'
-
+path = '\MoneyMentor\Data'
+main_file = os.path.join(os.getcwd() , path)
 # Create the folder and any necessary parent folders.
 # exist_ok=True prevents an error if the folder already exists.
-os.makedirs(folder_path, exist_ok=True)
+#os.makedirs(folder_path, exist_ok=True)
 
-print(f"Folder '{folder_path}' ensured to exist.")
+#print(f"Folder '{folder_path}' ensured to exist.")
+print(main_file)
