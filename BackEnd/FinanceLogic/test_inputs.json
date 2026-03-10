@@ -1,0 +1,22 @@
+{
+    "tests":[
+        {
+            "name": "basic_budget",
+            "income": 400000,
+            "expenses": [120000, 30000, 20000, 15000],
+            "expected_budget": 215000
+        },
+        {
+            "name": "no_expenses",
+            "income": 500000,
+            "expenses": [],
+            "expected_budget": 500000
+        },
+        {
+            "name": "over_budget",
+            "income": 100000,
+            "expenses": [250000, 70000, 40000, 30000],
+            "expected_budget": -290000
+        }
+    ]
+}
