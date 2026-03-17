@@ -1,8 +1,8 @@
 import os
 import json
-
+# Should write a modify json file method
 class JSON_RW:
-
+    #Return bool based on if path exists
     @staticmethod
     def path_exists(filename):
     
@@ -17,13 +17,15 @@ class JSON_RW:
 
                 existing = json.load(f)
 
-                if isinstance(existing,list):
+                if isinstance(existing,dict):
 
-                    existing.append(data)
-                
-                else:
+                    # Merges existing dict with new key pair
 
-                    existing = [existing,data]
+                    existing = existing | data
+
+                    with open(filename, 'w', encoding='utf-8') as f:
+
+                        json.dump(existing,f, indent = 4)
 
         else:
 
@@ -37,6 +39,12 @@ class JSON_RW:
 
     def read_json_file(filename):
 
-        with open(filename, 'r', encoding='utf-8') as f:
+        if JSON_RW.path_exists(filename):
 
-            return json.load(f)
+            with open(filename, 'r') as f:
+
+                return json.load(f)
+        else:
+
+            return "File does not exist"
+
