@@ -2,8 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 import json
 import os
+from pathlib import Path
 
-FILE_NAME = "categories.json"
+dir = dir = Path(__file__).resolve().parent
+FILE_NAME = f"{dir}\categories.json"
 DEFAULT_CATEGORY = "Miscellaneous"
 
 
