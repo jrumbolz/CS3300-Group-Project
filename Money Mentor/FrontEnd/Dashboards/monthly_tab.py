@@ -3,6 +3,7 @@ from tkinter import ttk
 import json
 import os
 
+
 CATEGORIES_FILE = "categories.json"
 
 
