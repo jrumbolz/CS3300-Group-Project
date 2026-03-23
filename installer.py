@@ -1,9 +1,12 @@
 import os
 import shutil
 from tkinter import Tk, filedialog, messagebox
+from pathlib import Path
+
 
 # Folder you want to install
-SOURCE_FOLDER = "Money Mentor"
+app_dir = Path(__file__).resolve().parent
+SOURCE_FOLDER = f"{app_dir}\Money Mentor"
 
 def main():
     # Hide the root tkinter window
