@@ -6,7 +6,7 @@ from pathlib import Path
 def run_dashboard():
 
     dir = Path(__file__).resolve().parent
-    file_name = f"{dir}\FrontEnd\Dashboards\Home\home_dashboard.py"
+    file_name = f"{dir}\FrontEnd\Dashboards\home_dashboard.py"
 
     print(file_name)
 
