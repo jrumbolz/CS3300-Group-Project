@@ -5,10 +5,9 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-
 # ====== FILE PATH SETUP ======
 BASE_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
+DATA_DIR = BASE_DIR / "BackEnd" / "Data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 CATEGORIES_FILE = DATA_DIR / "categories.json"
 
