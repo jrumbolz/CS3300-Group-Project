@@ -4,8 +4,19 @@ import json
 import os
 from pathlib import Path
 
-dir = dir = Path(__file__).resolve().parent
-FILE_NAME = f"{dir}\categories.json"
+# ====== FILE PATH SETUP ======
+# Go up to project root (Money Mentor)
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+# Navigate to BackEnd/Data Storage
+DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
+
+# Ensure the folder exists
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Final file path
+FILE_NAME = DATA_DIR / "categories.json"
+
 DEFAULT_CATEGORY = "Miscellaneous"
 
 
