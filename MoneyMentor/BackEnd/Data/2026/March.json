@@ -1,0 +1,14 @@
+[
+    {
+        "amount": 700.0,
+        "category": "rent",
+        "type": "Expense",
+        "time": "2026-03-25 13:46:16"
+    },
+    {
+        "amount": 250.0,
+        "category": "auto",
+        "type": "Expense",
+        "time": "2026-03-25 13:46:39"
+    }
+]
