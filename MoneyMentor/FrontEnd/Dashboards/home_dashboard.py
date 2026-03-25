@@ -4,6 +4,7 @@ import categories_tab
 import goals_tab
 import monthly_tab
 import yearly_tab
+import data_display_tab
 
 def main():
     root = tk.Tk()
@@ -21,6 +22,9 @@ def main():
     goals_tab.create_tab(notebook)
     monthly_tab.create_tab(notebook)
     yearly_tab.create_tab(notebook)
+
+    #newly added visual display tab 
+    data_display_tab.create_tab(notebook)
 
     root.mainloop()
 

@@ -9,7 +9,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 # Navigate to BackEnd/Data Storage
-DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
+DATA_DIR = BASE_DIR / "BackEnd" / "Data"
 
 # Ensure the folder exists
 DATA_DIR.mkdir(parents=True, exist_ok=True)
