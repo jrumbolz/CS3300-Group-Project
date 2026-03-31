@@ -62,8 +62,6 @@ def create_tab(notebook):
         "September", "October", "November", "December"
     ]
 
-    current_year = datetime.now().year
-    years = [str(y) for y in range(current_year - 10, current_year)]
 
     categories = load_categories()
     current_data = []
@@ -93,11 +91,6 @@ def create_tab(notebook):
     input_frame = ttk.Frame(container)
     input_frame.pack(pady=5)
 
-    # Year dropdown
-    tk.Label(input_frame, text="Select Year:").pack(pady=2)
-    year_combo = ttk.Combobox(input_frame, values=years, state="readonly")
-    year_combo.pack(pady=2)
-    year_combo.set(str(current_year))
 
     # Month dropdown
     tk.Label(input_frame, text="Select Month:").pack(pady=2)
@@ -106,35 +99,18 @@ def create_tab(notebook):
     current_month = datetime.now().strftime("%B")
     month_combo.set(current_month)
 
-    # Expense or Income Drop Down
-    tk.Label(input_frame, text="Type:").pack(pady=2)
-    type_combo = ttk.Combobox(input_frame, values=["Expense", "Income"], state="readonly")
-    type_combo.pack(pady=2)
-    type_combo.set("Expense")
+
+    # Expense amount
+    tk.Label(input_frame, text="Expense Amount:").pack(pady=2)
+    amount_entry = ttk.Entry(input_frame)
+    amount_entry.pack(pady=2)
+
 
     # Category dropdown
     tk.Label(input_frame, text="Category:").pack(pady=2)
     category_combo = ttk.Combobox(input_frame, values=categories, state="readonly")
     category_combo.pack(pady=2)
     category_combo.set("Miscellaneous")
-
-    # ===== NEW: Refresh categories dynamically =====
-    def refresh_categories(event=None):
-        current = category_combo.get()
-        new_categories = load_categories()
-        category_combo["values"] = new_categories
-
-        if current in new_categories:
-            category_combo.set(current)
-        else:
-            category_combo.set(new_categories[0] if new_categories else "")
-
-    category_combo.bind("<Button-1>", refresh_categories)
-
-    # Expense amount
-    tk.Label(input_frame, text="Expense Amount:").pack(pady=2)
-    amount_entry = ttk.Entry(input_frame)
-    amount_entry.pack(pady=2)
 
 
     # Result label
