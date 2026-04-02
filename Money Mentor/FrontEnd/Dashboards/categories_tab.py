@@ -1,24 +1,13 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 import json
 import os
 from pathlib import Path
 
-# ====== FILE PATH SETUP ======
-# Go up to project root (Money Mentor)
 BASE_DIR = Path(__file__).resolve().parents[2]
-
-# Navigate to BackEnd/Data Storage
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
-
-# Ensure the folder exists
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-# Final file path
 FILE_NAME = DATA_DIR / "categories.json"
-
 DEFAULT_CATEGORY = "Miscellaneous"
-
 
 # ---------- Load ----------
 def load_categories():
@@ -26,84 +15,73 @@ def load_categories():
         try:
             with open(FILE_NAME, "r") as f:
                 data = json.load(f)
-
-                # Ensure it's a list
                 if not isinstance(data, list):
                     return [DEFAULT_CATEGORY]
-
-                # Always include default
                 if DEFAULT_CATEGORY not in data:
                     data.append(DEFAULT_CATEGORY)
-
                 return data
-
         except (json.JSONDecodeError, IOError):
             pass
-
     return [DEFAULT_CATEGORY]
-
 
 # ---------- Save ----------
 def save_categories(categories):
-    # Ensure default category always exists
     if DEFAULT_CATEGORY not in categories:
         categories.append(DEFAULT_CATEGORY)
-
     with open(FILE_NAME, "w") as f:
         json.dump(categories, f, indent=4)
 
-
 # ---------- UI ----------
 def create_tab(notebook):
-    frame = ttk.Frame(notebook)
+    frame = ctk.CTkFrame(notebook)
     notebook.add(frame, text="Categories")
 
     categories = load_categories()
 
-    tk.Label(frame, text="Add a new category:").pack(pady=5)
+    container = ctk.CTkFrame(frame)
+    container.pack(expand=True, fill=None, pady=40)
 
-    cat_entry = tk.Entry(frame)
-    cat_entry.pack(pady=5)
+    input_frame = ctk.CTkFrame(container)
+    input_frame.pack(padx=20, pady=20)
 
-    cat_listbox = tk.Listbox(frame)
-    cat_listbox.pack(pady=10, fill="both", expand=True)
+    # --- Add category ---
+    ctk.CTkLabel(input_frame, text="Add a new category:").grid(row=0, column=0, columnspan=2, pady=5)
+    cat_entry = ctk.CTkEntry(input_frame, width=150, corner_radius=8)
+    cat_entry.grid(row=1, column=0, columnspan=2, pady=5)
 
-    # Refresh list display
+    # --- Display categories in a ComboBox ---
+    ctk.CTkLabel(input_frame, text="Select a category to delete:").grid(row=2, column=0, columnspan=2, pady=5)
+    cat_combobox = ctk.CTkComboBox(input_frame, values=categories, width=200)
+    cat_combobox.grid(row=3, column=0, columnspan=2, pady=5)
+    if categories:
+        cat_combobox.set(categories[0])
+
     def refresh():
-        cat_listbox.delete(0, tk.END)
-        for cat in categories:
-            cat_listbox.insert(tk.END, cat)
+        cat_combobox.configure(values=categories)
+        if categories:
+            cat_combobox.set(categories[0])
+        else:
+            cat_combobox.set("")
 
-    refresh()
-
-    # Add category
+    # --- Add category ---
     def add_category():
         new_cat = cat_entry.get().strip()
-
         if new_cat and new_cat not in categories:
             categories.append(new_cat)
+            save_categories(categories)
             refresh()
-            save_categories(categories)  # auto-save
-            cat_entry.delete(0, tk.END)
+            cat_entry.delete(0, "end")
 
-    # Delete category
+    # --- Delete selected category ---
     def delete_category():
-        selected = cat_listbox.curselection()
-        if not selected:
-            return
+        selected = cat_combobox.get()
+        if selected and selected != DEFAULT_CATEGORY:
+            categories.remove(selected)
+            save_categories(categories)
+            refresh()
 
-        index = selected[0]
-        value = cat_listbox.get(index)
-
-        if value == DEFAULT_CATEGORY:
-            return  # cannot delete
-
-        categories.remove(value)
-        refresh()
-        save_categories(categories)  # auto-save
-
-    # Buttons
-    tk.Button(frame, text="Add Category", command=add_category).pack(pady=5)
-    tk.Button(frame, text="Delete Selected", command=delete_category).pack(pady=5)
+    ctk.CTkButton(input_frame, text="Add Category", width=150, corner_radius=15, command=add_category).grid(row=4, column=0, pady=10)
+    ctk.CTkButton(input_frame, text="Delete Selected", width=150, corner_radius=15, command=delete_category).grid(row=4, column=1, pady=10)
 
     return frame
+#Tony is on the case1

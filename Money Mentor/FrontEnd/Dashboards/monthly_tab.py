@@ -1,37 +1,16 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 import json
 import os
 from pathlib import Path
 from datetime import datetime
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-
-# ====== FILE PATH SETUP ======
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-CATEGORIES_FILE = DATA_DIR / "categories.json"
-
-
-
-
-def load_categories():
-    if not os.path.exists(CATEGORIES_FILE):
-        default = ["Miscellaneous", "Food", "Transport", "Bills", "Entertainment"]
-        with open(CATEGORIES_FILE, "w") as f:
-            json.dump(default, f, indent=4)
-        return default
-    with open(CATEGORIES_FILE, "r") as f:
-        return json.load(f)
-
-
-
 
 def get_month_file(month, year):
     return DATA_DIR / f"{year}_{month}.json"
-
-
-
 
 def load_month_data(month, year):
     file_name = get_month_file(month, year)
@@ -40,21 +19,9 @@ def load_month_data(month, year):
             return json.load(f)
     return []
 
-
-
-
-def save_month_data(month, year, data):
-    file_name = get_month_file(month, year)
-    with open(file_name, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-
-
 def create_tab(notebook):
-    frame = ttk.Frame(notebook)
+    frame = ctk.CTkFrame(notebook)
     notebook.add(frame, text="Monthly Spending")
-
 
     months = [
         "January", "February", "March", "April",
@@ -62,89 +29,48 @@ def create_tab(notebook):
         "September", "October", "November", "December"
     ]
 
-
-    categories = load_categories()
-    current_data = []
-
-
-    # ===== Live current date/time display =====
-    time_label = ttk.Label(frame, text="", font=("Arial", 10))
-    time_label.pack(pady=5)
-
-
-    def update_time():
-        now = datetime.now()
-        formatted = now.strftime("%B %d, %Y | %I:%M:%S %p")
-        time_label.config(text=formatted)
-        frame.after(1000, update_time)
-
-
-    update_time()
-
-
-    # ===== Container frame for inputs, listbox, and save button =====
-    container = ttk.Frame(frame)
-    container.pack(expand=True, fill='both', pady=5)
-
-
-    # ===== Input frame centered =====
-    input_frame = ttk.Frame(container)
-    input_frame.pack(pady=5)
-
+    container = ctk.CTkFrame(frame)
+    container.pack(expand=True, pady=20)
 
     # Month dropdown
-    tk.Label(input_frame, text="Select Month:").pack(pady=2)
-    month_combo = ttk.Combobox(input_frame, values=months, state="readonly")
-    month_combo.pack(pady=2)
-    current_month = datetime.now().strftime("%B")
-    month_combo.set(current_month)
+    ctk.CTkLabel(container, text="Select Month:").grid(row=0, column=0, pady=5)
+    month_combo = ctk.CTkComboBox(container, values=months, width=150)
+    month_combo.grid(row=0, column=1, pady=5)
+    month_combo.set(datetime.now().strftime("%B"))
 
+    # Expense entry
+    ctk.CTkLabel(container, text="Expense Amount:").grid(row=1, column=0, pady=5)
+    amount_entry = ctk.CTkEntry(container, width=150, corner_radius=8)
+    amount_entry.grid(row=1, column=1, pady=5)
 
-    # Expense amount
-    tk.Label(input_frame, text="Expense Amount:").pack(pady=2)
-    amount_entry = ttk.Entry(input_frame)
-    amount_entry.pack(pady=2)
-
-
-    # Category dropdown
-    tk.Label(input_frame, text="Category:").pack(pady=2)
-    category_combo = ttk.Combobox(input_frame, values=categories, state="readonly")
-    category_combo.pack(pady=2)
+    # Category (load dynamically)
+    from categories_tab import load_categories
+    categories = load_categories()
+    ctk.CTkLabel(container, text="Category:").grid(row=2, column=0, pady=5)
+    category_combo = ctk.CTkComboBox(container, values=categories, width=150)
+    category_combo.grid(row=2, column=1, pady=5)
     category_combo.set("Miscellaneous")
 
+    result_label = ctk.CTkLabel(container, text="")
+    result_label.grid(row=3, column=0, columnspan=2, pady=5)
 
-    # Result label
-    result = tk.Label(input_frame, text="")
-    result.pack(pady=2)
+    # Listbox
+    listbox = ctk.CTkTextbox(container, width=300, height=150, corner_radius=8)
+    listbox.grid(row=4, column=0, columnspan=2, pady=10)
 
-
-    # ===== Listbox =====
-    listbox_frame = ttk.Frame(container)
-    listbox_frame.pack(fill='both', expand=True, pady=5)
-    listbox = tk.Listbox(listbox_frame)
-    listbox.pack(fill='both', expand=True)
-
+    current_data = []
 
     def refresh_list():
-        listbox.delete(0, tk.END)
+        listbox.delete("0.0", "end")
         total = 0
         for expense in current_data:
             amount = expense["amount"]
             category = expense["category"]
             time_str = expense.get("time", "")
             total += amount
-            listbox.insert(tk.END, f"${amount:.2f} - {category} ({time_str})")
+            listbox.insert("end", f"${amount:.2f} - {category} ({time_str})\n")
         if current_data:
-            listbox.insert(tk.END, f"--- Total: ${total:.2f} ---")
-
-
-    def on_month_change(event):
-        nonlocal current_data
-        month = month_combo.get()
-        year = datetime.now().year
-        current_data = load_month_data(month, year)
-        refresh_list()
-
+            listbox.insert("end", f"--- Total: ${total:.2f} ---\n")
 
     def save_expense():
         nonlocal current_data
@@ -155,7 +81,6 @@ def create_tab(notebook):
         year = now.year
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
 
-
         try:
             amount = float(value)
             current_data = load_month_data(month, year)
@@ -164,20 +89,15 @@ def create_tab(notebook):
                 "category": category,
                 "time": timestamp
             })
-            save_month_data(month, year, current_data)
+            with open(get_month_file(month, year), "w") as f:
+                json.dump(current_data, f, indent=4)
             refresh_list()
-            result.config(text=f"Saved ${amount:.2f} ({category})")
-            amount_entry.delete(0, tk.END)
+            result_label.configure(text=f"Saved ${amount:.2f} ({category})")
+            amount_entry.delete(0, "end")
         except ValueError:
-            result.config(text="Enter a valid number.")
+            result_label.configure(text="Enter a valid number.")
 
-
-    month_combo.bind("<<ComboboxSelected>>", on_month_change)
-
-
-    # ===== Save Button (always visible below listbox) =====
-    save_button = ttk.Button(container, text="Save Expense", command=save_expense)
-    save_button.pack(pady=5)
-
+    ctk.CTkButton(container, text="Save Expense", width=150, corner_radius=15, command=save_expense).grid(row=5, column=0, columnspan=2, pady=10)
 
     return frame
+#Tony is on the case1
