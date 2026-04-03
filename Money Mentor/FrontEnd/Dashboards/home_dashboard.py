@@ -13,8 +13,8 @@ def main():
     # --- Root Window ---
     root = ctk.CTk()
     root.title("Money Mentor 💰")
-    root.geometry("550x510")  # window size updated
-    root.resizable(False, False)
+    root.geometry("1000x1000")  # window size updated
+    root.resizable(True, True)
 
     apply_theme(root)
 
