@@ -12,16 +12,36 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_month_file(month, year):
-    return DATA_DIR / f"{year}_{month}.json"
-
+    # 1. Create the path for the year subfolder (e.g., Data Storage/2024/)
+    year_dir = DATA_DIR / str(year)
+    year_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 2. Return the path for the month file (e.g., Data Storage/2024/January.json)
+    return year_dir / f"{month}.json"
 
 def load_month_data(month, year):
-    file_name = get_month_file(month, year)
-    if os.path.exists(file_name):
-        with open(file_name, "r") as f:
+    file_path = get_month_file(month, year)
+    
+    # If the file doesn't exist, create it with an empty list []
+    if not file_path.exists():
+        with open(file_path, "w") as f:
+            json.dump([], f, indent=4)
+        return []
+    
+    # Otherwise, load the existing data
+    with open(file_path, "r") as f:
+        try:
             return json.load(f)
-    return []
+        except json.JSONDecodeError:
+            return [] # Returns empty list if file is corrupted
 
+def save_month_data(month, year, data):
+    file_path = get_month_file(month, year)
+    # Ensure the parent folder (the year folder) exists
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(file_path, "w") as f:
+        json.dump(data, f, indent=4)
 
 def create_tab(notebook):
     frame = ctk.CTkFrame(notebook)
@@ -147,8 +167,7 @@ def create_tab(notebook):
                 "time": timestamp
             })
 
-            with open(get_month_file(month, year), "w") as f:
-                json.dump(current_data, f, indent=4)
+            save_month_data(month, year, current_data)
 
             refresh_list()
             result_label.configure(text=f"Saved ${amount:.2f} ({entry_type})")
