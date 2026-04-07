@@ -32,7 +32,7 @@ def ctk_color_to_rgba(color):
 
 def create_tab(notebook):
     frame = ctk.CTkFrame(notebook)
-    notebook.add(frame, text="Spending Charts")
+    notebook.add(frame, text="Monthly Spending Charts")
 
     months = [
         "January", "February", "March", "April",
@@ -41,7 +41,7 @@ def create_tab(notebook):
     ]
 
     # --- Title ---
-    ctk.CTkLabel(frame, text="Spending Breakdown", font=("Segoe UI", 16)).pack(pady=(20, 10))
+    ctk.CTkLabel(frame, text="Monthly Spending Breakdown", font=("Segoe UI", 16)).pack(pady=(20, 10))
 
     # --- Month Selector ---
     month_combo = ctk.CTkComboBox(frame, values=months, width=150)
