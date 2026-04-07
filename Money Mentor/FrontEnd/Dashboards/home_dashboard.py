@@ -13,6 +13,7 @@ from app_theme import apply_theme
 def main():
     root = ctk.CTk()
     root.title("Money Mentor 💰")
+
     root.geometry("550x510")
     root.resizable(False, False)
 
