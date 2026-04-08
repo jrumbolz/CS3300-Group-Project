@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from mpl_toolkits.mplot3d import Axes3D  # Needed for 3D plotting
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
@@ -47,7 +48,7 @@ def create_tab(notebook):
         font=("Segoe UI", 16, "bold")
     ).pack(pady=(20, 10))
 
-    # --- Input Container ---
+    # --- Input Frame ---
     input_frame = ctk.CTkFrame(frame)
     input_frame.pack(pady=(0, 10))
 
@@ -62,13 +63,13 @@ def create_tab(notebook):
         for widget in chart_frame.winfo_children():
             widget.destroy()
 
-    def calculate_yearly_total(year):
-        monthly_totals = {}
+    def calculate_yearly_totals(year):
+        totals = {}
         for month in months:
             data = load_month_data(month, year)
             month_total = sum(entry.get("amount", 0) for entry in data)
-            monthly_totals[month] = month_total
-        return monthly_totals
+            totals[month] = month_total
+        return totals
 
     def show_chart():
         clear_chart()
@@ -77,31 +78,39 @@ def create_tab(notebook):
             ctk.CTkLabel(chart_frame, text="Enter a valid year").pack(pady=20)
             return
         year = int(year)
-        monthly_totals = calculate_yearly_total(year)
+
+        monthly_totals = calculate_yearly_totals(year)
         if sum(monthly_totals.values()) == 0:
-            ctk.CTkLabel(chart_frame, text="No data available for this year").pack(pady=20)
+            ctk.CTkLabel(chart_frame, text=f"No data available for {year}").pack(pady=20)
             return
 
         labels = list(monthly_totals.keys())
         values = list(monthly_totals.values())
+
         bg_color = ctk_color_to_rgba(chart_frame.cget("fg_color"))
 
         fig = Figure(figsize=(6, 4), facecolor=bg_color)
-        ax = fig.add_subplot(111, facecolor=bg_color)
-        ax.bar(labels, values)
+        ax = fig.add_subplot(111, projection='3d', facecolor=bg_color)
+
+        xs = range(len(labels))
+        ys = values
+        zs = [0]*len(labels)
+        dx = [0.5]*len(labels)
+        dy = [0.5]*len(labels)
+        dz = ys
+
+        ax.bar3d(xs, zs, zs, dx, dy, dz, color="#4a90e2", shade=True)
+        ax.set_xticks([x + 0.25 for x in xs])
+        ax.set_xticklabels(labels, rotation=45, color="white")
+        ax.set_yticks([])
+        ax.set_zticklabels([f"${int(t)}" for t in ax.get_zticks()], color="white")
         ax.set_title(f"{year} Monthly Spending", color="white")
-        ax.set_ylabel("Amount ($)", color="white")
-        ax.tick_params(axis='x', rotation=45, colors="white")
-        ax.tick_params(axis='y', colors="white")
-        for spine in ax.spines.values():
-            spine.set_color("white")
-        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.3)
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    # --- Submit Button inside same input frame ---
+    # --- Button ---
     submit_btn = ctk.CTkButton(
         input_frame,
         text="Show Chart",
@@ -115,5 +124,4 @@ def create_tab(notebook):
     show_chart()
 
     return frame
-
-#Tony is on the case2
+#tony is on the case

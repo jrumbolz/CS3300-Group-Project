@@ -14,7 +14,7 @@ def main():
     root = ctk.CTk()
     root.title("Money Mentor 💰")
 
-    root.geometry("550x510")
+    root.geometry("500x650")
     root.resizable(False, False)
 
     apply_theme(root)
@@ -58,4 +58,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-#Tony is on the case2
+#tony is on the case
