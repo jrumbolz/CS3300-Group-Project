@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from mpl_toolkits.mplot3d import Axes3D  # needed for 3D effect
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
@@ -32,7 +33,7 @@ def ctk_color_to_rgba(color):
 
 def create_tab(notebook):
     frame = ctk.CTkFrame(notebook)
-    notebook.add(frame, text="Spending Charts")
+    notebook.add(frame, text="Monthly Spending Charts")
 
     months = [
         "January", "February", "March", "April",
@@ -41,7 +42,7 @@ def create_tab(notebook):
     ]
 
     # --- Title ---
-    ctk.CTkLabel(frame, text="Spending Breakdown", font=("Segoe UI", 16)).pack(pady=(20, 10))
+    ctk.CTkLabel(frame, text="Monthly Spending Breakdown", font=("Segoe UI", 16)).pack(pady=(20, 10))
 
     # --- Month Selector ---
     month_combo = ctk.CTkComboBox(frame, values=months, width=150)
@@ -79,18 +80,25 @@ def create_tab(notebook):
 
         labels = list(category_totals.keys())
         values = list(category_totals.values())
-
         bg_color = ctk_color_to_rgba(chart_frame.cget("fg_color"))
 
+        # --- Create Figure ---
         fig = Figure(figsize=(5, 5), facecolor=bg_color)
-        ax = fig.add_subplot(111, facecolor=bg_color)
+        ax = fig.add_subplot(111, aspect="equal", facecolor=bg_color)
 
+        # --- 3D-style Pie Chart ---
         wedges, texts, autotexts = ax.pie(
             values,
             labels=labels,
             autopct='%1.1f%%',
-            textprops={'color':'white'}
+            startangle=120,      # tilt effect
+            shadow=True,         # gives depth
+            wedgeprops={'edgecolor':'white', 'linewidth':1}  # 3D edges
         )
+
+        for text in texts + autotexts:
+            text.set_color("white")
+
         ax.set_title(f"{month} Spending Breakdown", color='white')
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
@@ -98,7 +106,7 @@ def create_tab(notebook):
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
     # --- Bind and Button ---
-    month_combo.configure(command=show_chart)  # ensures immediate update
+    month_combo.configure(command=show_chart)
     month_combo.bind("<<ComboboxSelected>>", show_chart)
     ctk.CTkButton(frame, text="Show Chart", command=show_chart, width=150, corner_radius=15).pack(pady=(10, 20))
 
@@ -106,4 +114,4 @@ def create_tab(notebook):
     show_chart()
 
     return frame
-#Tony is on the case1
+#tony is on the case
