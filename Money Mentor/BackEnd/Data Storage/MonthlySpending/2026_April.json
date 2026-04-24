@@ -1,8 +1,27 @@
-[
-    {
-        "amount": 500.0,
-        "category": "Miscellaneous",
-        "type": "Expense",
-        "time": "2026-04-24 08:59:52"
-    }
-]
+{
+    "summary": {
+        "total_income": 2000.0,
+        "total_expense": 1000.0,
+        "net_total": 1000.0
+    },
+    "entries": [
+        {
+            "amount": 500.0,
+            "category": "Miscellaneous",
+            "type": "Expense",
+            "time": "2026-04-24 08:59:52"
+        },
+        {
+            "amount": 500.0,
+            "category": "rent",
+            "type": "Expense",
+            "time": "2026-04-24 09:24:10"
+        },
+        {
+            "amount": 2000.0,
+            "category": "rent",
+            "type": "Income",
+            "time": "2026-04-24 09:24:42"
+        }
+    ]
+}

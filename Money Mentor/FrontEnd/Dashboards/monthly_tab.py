@@ -13,26 +13,55 @@ def get_month_file(month, year):
 
 def load_month_data(month, year):
     file_name = get_month_file(month, year)
-    if os.path.exists(file_name):
-        with open(file_name, "r") as f:
-            return json.load(f)
-    return []
+
+    if not os.path.exists(file_name):
+        return {"summary": {"total_income": 0, "total_expense": 0, "net_total": 0}, "entries": []}
+
+    with open(file_name, "r") as f:
+        data = json.load(f)
+
+    # Backward compatibility (old format list)
+    if isinstance(data, list):
+        return {
+            "summary": {"total_income": 0, "total_expense": 0, "net_total": 0},
+            "entries": data
+        }
+
+    return data
 
 def save_month_data(month, year, data):
     file_name = get_month_file(month, year)
     file_name.parent.mkdir(parents=True, exist_ok=True)
+
     with open(file_name, "w") as f:
         json.dump(data, f, indent=4)
+
+def calculate_summary(entries):
+    income = 0
+    expense = 0
+
+    for e in entries:
+        amount = float(e.get("amount", 0))
+        if e.get("type") == "Income":
+            income += amount
+        else:
+            expense += amount
+
+    return {
+        "total_income": round(income, 2),
+        "total_expense": round(expense, 2),
+        "net_total": round(income - expense, 2)
+    }
 
 def create_tab(notebook):
     frame = ctk.CTkFrame(notebook)
     notebook.add(frame, text="Monthly Spending")
 
     months = [
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
     ]
+
     current_year = datetime.now().year
     years = [str(y) for y in range(current_year - 10, current_year + 1)]
 
@@ -45,166 +74,145 @@ def create_tab(notebook):
     container.grid_columnconfigure(1, weight=1)
 
     # --- Year ---
-    ctk.CTkLabel(container, text="Select Year:").grid(row=0, column=0, pady=5, sticky="e")
+    ctk.CTkLabel(container, text="Select Year:").grid(row=0, column=0, sticky="e", pady=5)
     year_combo = ctk.CTkComboBox(container, values=years, width=200)
-    year_combo.grid(row=0, column=1, pady=5, sticky="w")
+    year_combo.grid(row=0, column=1, sticky="w", pady=5)
     year_combo.set(str(current_year))
 
     # --- Month ---
-    ctk.CTkLabel(container, text="Select Month:").grid(row=1, column=0, pady=5, sticky="e")
+    ctk.CTkLabel(container, text="Select Month:").grid(row=1, column=0, sticky="e", pady=5)
     month_combo = ctk.CTkComboBox(container, values=months, width=200)
-    month_combo.grid(row=1, column=1, pady=5, sticky="w")
+    month_combo.grid(row=1, column=1, sticky="w", pady=5)
     month_combo.set(datetime.now().strftime("%B"))
 
     # --- Type ---
-    ctk.CTkLabel(container, text="Type:").grid(row=2, column=0, pady=5, sticky="e")
+    ctk.CTkLabel(container, text="Type:").grid(row=2, column=0, sticky="e", pady=5)
     type_combo = ctk.CTkComboBox(container, values=["Expense", "Income"], width=200)
-    type_combo.grid(row=2, column=1, pady=5, sticky="w")
+    type_combo.grid(row=2, column=1, sticky="w", pady=5)
     type_combo.set("Expense")
 
     # --- Category ---
     from categories_tab import load_categories
     categories = load_categories()
-    ctk.CTkLabel(container, text="Category:").grid(row=3, column=0, pady=5, sticky="e")
+
+    ctk.CTkLabel(container, text="Category:").grid(row=3, column=0, sticky="e", pady=5)
     category_combo = ctk.CTkComboBox(container, values=categories, width=200)
-    category_combo.grid(row=3, column=1, pady=5, sticky="w")
-    category_combo.set(categories[0] if categories else "")
+    category_combo.grid(row=3, column=1, sticky="w", pady=5)
+    category_combo.set(categories[0] if categories else "Misc")
 
     # --- Amount ---
-    ctk.CTkLabel(container, text="Amount:").grid(row=4, column=0, pady=5, sticky="e")
-    amount_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
-    amount_entry.grid(row=4, column=1, pady=5, sticky="w")
-
-    # --- Delete Index ---
-    ctk.CTkLabel(container, text="Delete Index:").grid(row=5, column=0, pady=5, sticky="e")
-    delete_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
-    delete_entry.grid(row=5, column=1, pady=5, sticky="w")
+    ctk.CTkLabel(container, text="Amount:").grid(row=4, column=0, sticky="e", pady=5)
+    amount_entry = ctk.CTkEntry(container, width=200)
+    amount_entry.grid(row=4, column=1, sticky="w", pady=5)
 
     # --- Result ---
     result_label = ctk.CTkLabel(container, text="")
-    result_label.grid(row=6, column=0, columnspan=2, pady=10)
+    result_label.grid(row=5, column=0, columnspan=2, pady=10)
 
     # --- Listbox ---
-    listbox = ctk.CTkTextbox(container, width=400, height=200, corner_radius=8)
-    listbox.grid(row=7, column=0, columnspan=2, pady=10)
+    listbox = ctk.CTkTextbox(container, width=450, height=250)
+    listbox.grid(row=6, column=0, columnspan=2, pady=10)
 
-    current_data = []
+    data = load_month_data(month_combo.get(), int(year_combo.get()))
+    current_data = data["entries"]
 
     def refresh_list():
         listbox.configure(state="normal")
         listbox.delete("0.0", "end")
 
-        balance = 0
-        for i, entry in enumerate(current_data):
-            amount = entry["amount"]
-            category = entry["category"]
-            entry_type = entry.get("type", "Expense")
-            time_str = entry.get("time", "")
+        summary = data.get("summary", {"total_income":0,"total_expense":0,"net_total":0})
 
-            if entry_type == "Expense":
-                balance -= amount
-                prefix = "-"
-            else:
-                balance += amount
-                prefix = "+"
+        # --- TOP SUMMARY ---
+        listbox.insert("end", f"📊 Income:  ${summary['total_income']:.2f}\n")
+        listbox.insert("end", f"📉 Expense: ${summary['total_expense']:.2f}\n")
+        listbox.insert("end", f"💰 Net:     ${summary['net_total']:.2f}\n")
+        listbox.insert("end", "-----------------------------\n\n")
 
+        # --- ENTRIES ---
+        for i, e in enumerate(current_data):
+            sign = "-" if e["type"] == "Expense" else "+"
             listbox.insert(
                 "end",
-                f"{i}: {prefix}${amount:.2f} - {category} ({entry_type}) ({time_str})\n"
+                f"{i}: {sign}${e['amount']:.2f} - {e['category']} ({e['type']}) ({e['time']})\n"
             )
-
-        if current_data:
-            listbox.insert("end", f"--- Balance: ${balance:.2f} ---\n")
 
         listbox.configure(state="disabled")
 
+    def save_all():
+        data["summary"] = calculate_summary(current_data)
+        save_month_data(month_combo.get(), int(year_combo.get()), data)
+
     def load_selected_month(event=None):
-        nonlocal current_data
-        month = month_combo.get()
-        year = int(year_combo.get())
-        current_data = load_month_data(month, year)
+        nonlocal data, current_data
+        data = load_month_data(month_combo.get(), int(year_combo.get()))
+        current_data = data["entries"]
         refresh_list()
 
-    # --- Save Button ---
     def save_entry():
-        nonlocal current_data
         now = datetime.now()
-        value = amount_entry.get()
-        category = category_combo.get() or "Miscellaneous"
-        entry_type = type_combo.get()
-        month = month_combo.get()
-        year = int(year_combo.get())
-        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            amount = float(value)
+            amount = float(amount_entry.get())
             if amount < 0:
-                result_label.configure(text="Enter a positive number.")
+                result_label.configure(text="Positive numbers only.")
                 return
 
             current_data.append({
                 "amount": amount,
-                "category": category,
-                "type": entry_type,
-                "time": timestamp
+                "category": category_combo.get(),
+                "type": type_combo.get(),
+                "time": now.strftime("%Y-%m-%d %H:%M:%S")
             })
-            save_month_data(month, year, current_data)
+
+            data["summary"] = calculate_summary(current_data)
+            save_all()
+
             refresh_list()
-            result_label.configure(text=f"Saved ${amount:.2f} ({entry_type})")
             amount_entry.delete(0, "end")
+            result_label.configure(text="Saved!")
+
         except ValueError:
-            result_label.configure(text="Enter a valid number.")
+            result_label.configure(text="Invalid number.")
 
-    # --- Delete Function ---
     def delete_entry_func():
-        nonlocal current_data
-        value = delete_entry.get()
-
         try:
-            index = int(value)
+            index = int(delete_entry.get())
 
             if index < 0 or index >= len(current_data):
                 result_label.configure(text="Invalid index.")
                 return
 
-            removed = current_data.pop(index)
+            current_data.pop(index)
 
-            month = month_combo.get()
-            year = int(year_combo.get())
-            save_month_data(month, year, current_data)
+            data["summary"] = calculate_summary(current_data)
+            save_all()
 
             refresh_list()
-            result_label.configure(
-                text=f"Deleted ${removed['amount']:.2f} ({removed['type']})"
-            )
+            result_label.configure(text="Deleted entry")
             delete_entry.delete(0, "end")
 
-        except ValueError:
-            result_label.configure(text="Enter a valid index.")
+        except:
+            result_label.configure(text="Enter valid index")
+
+    # --- Delete Entry Input ---
+    ctk.CTkLabel(container, text="Delete Index:").grid(row=7, column=0, sticky="e", pady=5)
+    delete_entry = ctk.CTkEntry(container, width=200)
+    delete_entry.grid(row=7, column=1, sticky="w", pady=5)
 
     # --- Buttons ---
-    ctk.CTkButton(
-        container,
-        text="Save Entry",
-        width=200,
-        corner_radius=15,
-        command=save_entry
-    ).grid(row=8, column=0, columnspan=2, pady=10)
+    ctk.CTkButton(container, text="Save Entry", command=save_entry).grid(row=8, column=0, columnspan=2, pady=5)
 
     ctk.CTkButton(
         container,
         text="Delete Entry",
-        width=200,
-        corner_radius=15,
         fg_color="red",
         command=delete_entry_func
-    ).grid(row=9, column=0, columnspan=2, pady=10)
+    ).grid(row=9, column=0, columnspan=2, pady=5)
 
-    # --- Bind Events ---
+    # --- Events ---
     month_combo.configure(command=load_selected_month)
     year_combo.configure(command=load_selected_month)
 
-    # --- Initial Load ---
     load_selected_month()
 
     return frame
