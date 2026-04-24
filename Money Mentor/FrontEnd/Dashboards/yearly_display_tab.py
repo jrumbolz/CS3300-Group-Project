@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from mpl_toolkits.mplot3d import Axes3D  # Needed for 3D plotting
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage" / "YearlySpending"
@@ -121,6 +120,7 @@ def create_tab(notebook):
             return
 
         labels = months
+        x = list(range(len(labels)))
 
         income_values = [yearly_values[month]["income"] for month in labels]
         expense_values = [yearly_values[month]["expense"] for month in labels]
@@ -128,70 +128,64 @@ def create_tab(notebook):
 
         bg_color = ctk_color_to_rgba(chart_frame.cget("fg_color"))
 
-        fig = Figure(figsize=(9, 5), facecolor=bg_color)
-        ax = fig.add_subplot(111, projection="3d", facecolor=bg_color)
+        fig = Figure(figsize=(10, 5), facecolor=bg_color)
+        ax = fig.add_subplot(111)
+        ax.set_facecolor(bg_color)
 
-        bar_width = 0.2
-        bar_depth = 0.4
+        bar_width = 0.25
 
-        month_positions = list(range(len(labels)))
+        income_x = [pos - bar_width for pos in x]
+        expense_x = x
+        net_x = [pos + bar_width for pos in x]
 
-        income_x = [x - 0.25 for x in month_positions]
-        expense_x = month_positions
-        net_x = [x + 0.25 for x in month_positions]
-
-        # Income bars
-        ax.bar3d(
+        ax.bar(
             income_x,
-            [0] * len(labels),
-            [0] * len(labels),
-            [bar_width] * len(labels),
-            [bar_depth] * len(labels),
             income_values,
+            width=bar_width,
             color="#2ecc71",
-            shade=True
+            label="Income"
         )
 
-        # Expense bars
-        ax.bar3d(
+        ax.bar(
             expense_x,
-            [0] * len(labels),
-            [0] * len(labels),
-            [bar_width] * len(labels),
-            [bar_depth] * len(labels),
             expense_values,
+            width=bar_width,
             color="#e74c3c",
-            shade=True
+            label="Expense"
         )
 
-        # Net bars
-        ax.bar3d(
+        ax.bar(
             net_x,
-            [0] * len(labels),
-            [0] * len(labels),
-            [bar_width] * len(labels),
-            [bar_depth] * len(labels),
             net_values,
+            width=bar_width,
             color="#3498db",
-            shade=True
+            label="Net"
         )
-
-        ax.set_xticks(month_positions)
-        ax.set_xticklabels(labels, rotation=45, ha="right", color="white")
-
-        ax.set_yticks([])
-
-        ax.tick_params(axis="z", colors="white")
-        ax.set_zlabel("Amount ($)", color="white")
 
         ax.set_title(
             f"{year} Monthly Income / Expense / Net",
             color="white"
         )
 
-        ax.text2D(0.02, 0.95, "🟢 Income", transform=ax.transAxes, color="white")
-        ax.text2D(0.02, 0.90, "🔴 Expense", transform=ax.transAxes, color="white")
-        ax.text2D(0.02, 0.85, "🔵 Net", transform=ax.transAxes, color="white")
+        ax.set_ylabel("Amount ($)", color="white")
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=45, ha="right", color="white")
+
+        ax.tick_params(axis="y", colors="white")
+
+        ax.spines["bottom"].set_color("white")
+        ax.spines["left"].set_color("white")
+        ax.spines["top"].set_color(bg_color)
+        ax.spines["right"].set_color(bg_color)
+
+        ax.grid(axis="y", alpha=0.3)
+
+        legend = ax.legend()
+        for text in legend.get_texts():
+            text.set_color("black")
+
+        fig.tight_layout()
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.draw()
