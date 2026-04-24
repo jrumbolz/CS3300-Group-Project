@@ -2,8 +2,7 @@ import customtkinter as ctk
 from tkinter import ttk
 
 import categories_tab
-import monthly_tab
-import yearly_tab             
+import monthly_tab          
 import yearly_display_tab      
 import data_display_tab
 
@@ -45,8 +44,7 @@ def main():
 
     # --- Tabs ---
     categories_tab.create_tab(notebook)
-    monthly_tab.create_tab(notebook)
-    yearly_tab.create_tab(notebook)           
+    monthly_tab.create_tab(notebook)          
     yearly_display_tab.create_tab(notebook)   
     data_display_tab.create_tab(notebook)
 
