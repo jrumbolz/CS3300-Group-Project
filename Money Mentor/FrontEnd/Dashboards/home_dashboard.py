@@ -2,7 +2,6 @@ import customtkinter as ctk
 from tkinter import ttk
 
 import categories_tab
-import goals_tab
 import monthly_tab
 import yearly_tab             
 import yearly_display_tab      
