@@ -46,7 +46,6 @@ def main():
 
     # --- Tabs ---
     categories_tab.create_tab(notebook)
-    goals_tab.create_tab(notebook)
     monthly_tab.create_tab(notebook)
     yearly_tab.create_tab(notebook)           
     yearly_display_tab.create_tab(notebook)   
