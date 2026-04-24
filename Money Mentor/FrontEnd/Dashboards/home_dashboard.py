@@ -14,8 +14,8 @@ def main():
     root = ctk.CTk()
     root.title("Money Mentor 💰")
 
-    root.geometry("500x650")
-    root.resizable(False, False)
+    root.geometry("800x1000")
+    root.resizable(True, True)
 
     apply_theme(root)
 
