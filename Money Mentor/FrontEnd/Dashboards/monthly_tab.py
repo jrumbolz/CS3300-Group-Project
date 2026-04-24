@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
+DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage" / "MonthlySpending"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_month_file(month, year):
@@ -75,13 +75,18 @@ def create_tab(notebook):
     amount_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
     amount_entry.grid(row=4, column=1, pady=5, sticky="w")
 
+    # --- Delete Index ---
+    ctk.CTkLabel(container, text="Delete Index:").grid(row=5, column=0, pady=5, sticky="e")
+    delete_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
+    delete_entry.grid(row=5, column=1, pady=5, sticky="w")
+
     # --- Result ---
     result_label = ctk.CTkLabel(container, text="")
-    result_label.grid(row=5, column=0, columnspan=2, pady=10)
+    result_label.grid(row=6, column=0, columnspan=2, pady=10)
 
     # --- Listbox ---
     listbox = ctk.CTkTextbox(container, width=400, height=200, corner_radius=8)
-    listbox.grid(row=6, column=0, columnspan=2, pady=10)
+    listbox.grid(row=7, column=0, columnspan=2, pady=10)
 
     current_data = []
 
@@ -90,7 +95,7 @@ def create_tab(notebook):
         listbox.delete("0.0", "end")
 
         balance = 0
-        for entry in current_data:
+        for i, entry in enumerate(current_data):
             amount = entry["amount"]
             category = entry["category"]
             entry_type = entry.get("type", "Expense")
@@ -105,7 +110,7 @@ def create_tab(notebook):
 
             listbox.insert(
                 "end",
-                f"{prefix}${amount:.2f} - {category} ({entry_type}) ({time_str})\n"
+                f"{i}: {prefix}${amount:.2f} - {category} ({entry_type}) ({time_str})\n"
             )
 
         if current_data:
@@ -150,8 +155,50 @@ def create_tab(notebook):
         except ValueError:
             result_label.configure(text="Enter a valid number.")
 
-    # Centered Save Button
-    ctk.CTkButton(container, text="Save Entry", width=200, corner_radius=15, command=save_entry).grid(row=7, column=0, columnspan=2, pady=15)
+    # --- Delete Function ---
+    def delete_entry_func():
+        nonlocal current_data
+        value = delete_entry.get()
+
+        try:
+            index = int(value)
+
+            if index < 0 or index >= len(current_data):
+                result_label.configure(text="Invalid index.")
+                return
+
+            removed = current_data.pop(index)
+
+            month = month_combo.get()
+            year = int(year_combo.get())
+            save_month_data(month, year, current_data)
+
+            refresh_list()
+            result_label.configure(
+                text=f"Deleted ${removed['amount']:.2f} ({removed['type']})"
+            )
+            delete_entry.delete(0, "end")
+
+        except ValueError:
+            result_label.configure(text="Enter a valid index.")
+
+    # --- Buttons ---
+    ctk.CTkButton(
+        container,
+        text="Save Entry",
+        width=200,
+        corner_radius=15,
+        command=save_entry
+    ).grid(row=8, column=0, columnspan=2, pady=10)
+
+    ctk.CTkButton(
+        container,
+        text="Delete Entry",
+        width=200,
+        corner_radius=15,
+        fg_color="red",
+        command=delete_entry_func
+    ).grid(row=9, column=0, columnspan=2, pady=10)
 
     # --- Bind Events ---
     month_combo.configure(command=load_selected_month)
@@ -161,4 +208,3 @@ def create_tab(notebook):
     load_selected_month()
 
     return frame
-#tony is on the case
