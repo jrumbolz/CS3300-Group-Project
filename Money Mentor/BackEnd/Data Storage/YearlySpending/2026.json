@@ -1,1 +1,13 @@
-jfasd;ljfdsa;lkjfds
+{
+    "year": 2026,
+    "total_income": 2000.0,
+    "total_expense": 1050.0,
+    "net_total": 950.0,
+    "months": {
+        "April": {
+            "income": 2000.0,
+            "expense": 1050.0,
+            "net": 950.0
+        }
+    }
+}
