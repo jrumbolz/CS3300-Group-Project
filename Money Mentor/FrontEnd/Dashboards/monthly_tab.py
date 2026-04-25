@@ -176,18 +176,32 @@ def create_tab(notebook):
     amount_entry = ctk.CTkEntry(container, width=200)
     amount_entry.grid(row=4, column=1, sticky="w", pady=5)
 
-    result_label = ctk.CTkLabel(container, text="")
-    result_label.grid(row=5, column=0, columnspan=2, pady=10)
-
-    listbox = ctk.CTkTextbox(container, width=450, height=250)
-    listbox.grid(row=6, column=0, columnspan=2, pady=10)
-
     data = load_month_data(month_combo.get(), int(year_combo.get()))
     current_data = data["entries"]
+    selected_index = None
+
+    result_label = ctk.CTkLabel(container, text="")
+    result_label.grid(row=6, column=0, columnspan=2, pady=10)
+
+    entries_frame = ctk.CTkScrollableFrame(container, width=450, height=250)
+    entries_frame.grid(row=7, column=0, columnspan=2, pady=10)
+
+    ctk.CTkLabel(container, text="Delete Index:").grid(row=8, column=0, sticky="e", pady=5)
+    delete_entry = ctk.CTkEntry(container, width=200)
+    delete_entry.grid(row=8, column=1, sticky="w", pady=5)
+
+    def select_entry(index):
+        nonlocal selected_index
+
+        selected_index = index
+        delete_entry.delete(0, "end")
+        delete_entry.insert(0, str(index))
+
+        result_label.configure(text=f"Selected entry {index}.")
 
     def refresh_list():
-        listbox.configure(state="normal")
-        listbox.delete("0.0", "end")
+        for widget in entries_frame.winfo_children():
+            widget.destroy()
 
         summary = data.get(
             "summary",
@@ -198,38 +212,33 @@ def create_tab(notebook):
             }
         )
 
-        listbox.insert("end", f"📊 Income:  ${summary['total_income']:.2f}\n")
-        listbox.insert("end", f"📉 Expense: ${summary['total_expense']:.2f}\n")
-        listbox.insert("end", f"💰 Net:     ${summary['net_total']:.2f}\n")
-        listbox.insert("end", "-----------------------------\n\n")
+        ctk.CTkLabel(entries_frame, text=f"📊 Income:  ${summary['total_income']:.2f}").pack(anchor="w", padx=10, pady=2)
+        ctk.CTkLabel(entries_frame, text=f"📉 Expense: ${summary['total_expense']:.2f}").pack(anchor="w", padx=10, pady=2)
+        ctk.CTkLabel(entries_frame, text=f"💰 Net:     ${summary['net_total']:.2f}").pack(anchor="w", padx=10, pady=2)
+        ctk.CTkLabel(entries_frame, text="-----------------------------").pack(anchor="w", padx=10, pady=5)
 
         for i, e in enumerate(current_data):
             sign = "-" if e["type"] == "Expense" else "+"
             amount = float(e.get("amount", 0))
 
-            listbox.insert(
-                "end",
-                f"{i}: {sign}${amount:.2f} - {e['category']} ({e['type']}) ({e['time']})\n"
+            entry_text = (
+                f"{i}: {sign}${amount:.2f} - "
+                f"{e['category']} ({e['type']}) ({e['time']})"
             )
 
-        listbox.configure(state="disabled")
+            ctk.CTkButton(
+                entries_frame,
+                text=entry_text,
+                anchor="w",
+                command=lambda index=i: select_entry(index)
+            ).pack(fill="x", padx=10, pady=3)
 
     def save_all():
         selected_year = int(year_combo.get())
 
         data["summary"] = calculate_summary(current_data)
         save_month_data(month_combo.get(), selected_year, data)
-
-        # Updates yearly file every time monthly data is saved
         save_year_file(selected_year)
-
-    def load_selected_month(event=None):
-        nonlocal data, current_data
-
-        data = load_month_data(month_combo.get(), int(year_combo.get()))
-        current_data = data["entries"]
-
-        refresh_list()
 
     def save_entry():
         now = datetime.now()
@@ -257,6 +266,22 @@ def create_tab(notebook):
         except ValueError:
             result_label.configure(text="Invalid number.")
 
+    ctk.CTkButton(
+        container,
+        text="Save Entry",
+        command=save_entry
+    ).grid(row=5, column=0, columnspan=2, pady=5)
+
+    def load_selected_month(event=None):
+        nonlocal data, current_data, selected_index
+
+        data = load_month_data(month_combo.get(), int(year_combo.get()))
+        current_data = data["entries"]
+        selected_index = None
+        delete_entry.delete(0, "end")
+
+        refresh_list()
+
     def delete_entry_func():
         try:
             index = int(delete_entry.get())
@@ -274,17 +299,7 @@ def create_tab(notebook):
             delete_entry.delete(0, "end")
 
         except ValueError:
-            result_label.configure(text="Enter valid index.")
-
-    ctk.CTkLabel(container, text="Delete Index:").grid(row=7, column=0, sticky="e", pady=5)
-    delete_entry = ctk.CTkEntry(container, width=200)
-    delete_entry.grid(row=7, column=1, sticky="w", pady=5)
-
-    ctk.CTkButton(
-        container,
-        text="Save Entry",
-        command=save_entry
-    ).grid(row=8, column=0, columnspan=2, pady=5)
+            result_label.configure(text="Select an entry or enter a valid index.")
 
     ctk.CTkButton(
         container,
