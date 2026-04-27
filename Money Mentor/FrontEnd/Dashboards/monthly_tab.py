@@ -44,25 +44,25 @@ def create_tab(notebook):
     container.grid_columnconfigure(0, weight=1)
     container.grid_columnconfigure(1, weight=1)
 
-    # --- Year ---
+    # Year
     ctk.CTkLabel(container, text="Select Year:").grid(row=0, column=0, pady=5, sticky="e")
     year_combo = ctk.CTkComboBox(container, values=years, width=200)
     year_combo.grid(row=0, column=1, pady=5, sticky="w")
     year_combo.set(str(current_year))
 
-    # --- Month ---
+    # Month
     ctk.CTkLabel(container, text="Select Month:").grid(row=1, column=0, pady=5, sticky="e")
     month_combo = ctk.CTkComboBox(container, values=months, width=200)
     month_combo.grid(row=1, column=1, pady=5, sticky="w")
     month_combo.set(datetime.now().strftime("%B"))
 
-    # --- Type ---
+    # type
     ctk.CTkLabel(container, text="Type:").grid(row=2, column=0, pady=5, sticky="e")
     type_combo = ctk.CTkComboBox(container, values=["Expense", "Income"], width=200)
     type_combo.grid(row=2, column=1, pady=5, sticky="w")
     type_combo.set("Expense")
 
-    # --- Category ---
+    # category
     from categories_tab import load_categories
     categories = load_categories()
     ctk.CTkLabel(container, text="Category:").grid(row=3, column=0, pady=5, sticky="e")
@@ -70,18 +70,23 @@ def create_tab(notebook):
     category_combo.grid(row=3, column=1, pady=5, sticky="w")
     category_combo.set(categories[0] if categories else "")
 
-    # --- Amount ---
+    # amount
     ctk.CTkLabel(container, text="Amount:").grid(row=4, column=0, pady=5, sticky="e")
     amount_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
     amount_entry.grid(row=4, column=1, pady=5, sticky="w")
 
-    # --- Result ---
-    result_label = ctk.CTkLabel(container, text="")
-    result_label.grid(row=5, column=0, columnspan=2, pady=10)
+    # deleter
+    ctk.CTkLabel(container, text="Delete Entry #:").grid(row=5, column=0, pady=5, sticky="e")
+    delete_entry = ctk.CTkEntry(container, width=200, corner_radius=8)
+    delete_entry.grid(row=5, column=1, pady=5, sticky="w")
 
-    # --- Listbox ---
+    #  Result 
+    result_label = ctk.CTkLabel(container, text="")
+    result_label.grid(row=6, column=0, columnspan=2, pady=10)
+
+    # Listbox
     listbox = ctk.CTkTextbox(container, width=400, height=200, corner_radius=8)
-    listbox.grid(row=6, column=0, columnspan=2, pady=10)
+    listbox.grid(row=7, column=0, columnspan=2, pady=10)
 
     current_data = []
 
@@ -90,7 +95,7 @@ def create_tab(notebook):
         listbox.delete("0.0", "end")
 
         balance = 0
-        for entry in current_data:
+        for i, entry in enumerate(current_data):
             amount = entry["amount"]
             category = entry["category"]
             entry_type = entry.get("type", "Expense")
@@ -105,7 +110,7 @@ def create_tab(notebook):
 
             listbox.insert(
                 "end",
-                f"{prefix}${amount:.2f} - {category} ({entry_type}) ({time_str})\n"
+                f"{i}: {prefix}${amount:.2f} - {category} ({entry_type}) ({time_str})\n"
             )
 
         if current_data:
@@ -118,9 +123,14 @@ def create_tab(notebook):
         month = month_combo.get()
         year = int(year_combo.get())
         current_data = load_month_data(month, year)
+
+        # refresh categories dynamically
+        from categories_tab import load_categories
+        category_combo.configure(values=load_categories())
+
         refresh_list()
 
-    # --- Save Button ---
+    #Save Button 
     def save_entry():
         nonlocal current_data
         now = datetime.now()
@@ -150,14 +160,62 @@ def create_tab(notebook):
         except ValueError:
             result_label.configure(text="Enter a valid number.")
 
+    #Delete Function
+    def delete_selected():
+        nonlocal current_data
+        month = month_combo.get()
+        year = int(year_combo.get())
+
+        try:
+            index = int(delete_entry.get())
+
+            if index < 0 or index >= len(current_data):
+                result_label.configure(text="Invalid entry number.")
+                return
+
+            removed = current_data.pop(index)
+            save_month_data(month, year, current_data)
+            refresh_list()
+            result_label.configure(
+                text=f"Deleted ${removed['amount']:.2f} ({removed.get('type','Expense')})"
+            )
+            delete_entry.delete(0, "end")
+
+        except ValueError:
+            result_label.configure(text="Enter a valid entry number.")
+
+    #Refresh Function
+    def refresh_all():
+        from categories_tab import load_categories
+        category_combo.configure(values=load_categories())
+        refresh_list()
+
     # Centered Save Button
-    ctk.CTkButton(container, text="Save Entry", width=200, corner_radius=15, command=save_entry).grid(row=7, column=0, columnspan=2, pady=15)
+    ctk.CTkButton(container, text="Save Entry", width=200, corner_radius=15, command=save_entry).grid(row=8, column=0, columnspan=2, pady=15)
+
+    # Delete Button
+    ctk.CTkButton(
+        container,
+        text="Delete Entry",
+        width=200,
+        corner_radius=15,
+        command=delete_selected
+    ).grid(row=9, column=0, columnspan=2, pady=10)
+
+    # Refresh Button
+    ctk.CTkButton(
+        container,
+        text="Refresh",
+        width=200,
+        corner_radius=15,
+        command=refresh_all
+    ).grid(row=10, column=0, columnspan=2, pady=5)
 
     # --- Bind Events ---
     month_combo.configure(command=load_selected_month)
     year_combo.configure(command=load_selected_month)
 
-    # --- Initial Load ---
+    # Initial Load 
     load_selected_month()
 
     return frame

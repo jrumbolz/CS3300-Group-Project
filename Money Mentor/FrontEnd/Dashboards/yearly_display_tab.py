@@ -104,7 +104,7 @@ def create_tab(notebook):
         ax.set_xticklabels(labels, rotation=45, color="white")
         ax.set_yticks([])
         ax.set_zticklabels([f"${int(t)}" for t in ax.get_zticks()], color="white")
-        ax.set_title(f"{year} Monthly Spending", color="white")
+        ax.set_title(f"{year} Yearly Spending", color="white")
 
         canvas = FigureCanvasTkAgg(fig, master=chart_frame)
         canvas.draw()
