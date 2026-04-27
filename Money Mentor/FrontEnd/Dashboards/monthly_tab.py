@@ -1,207 +1,301 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 import json
 import os
 from pathlib import Path
 from datetime import datetime
 
-
-# ====== FILE PATH SETUP ======
 BASE_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
+
+DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage" / "MonthlySpending"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-CATEGORIES_FILE = DATA_DIR / "categories.json"
 
-
-
-
-def load_categories():
-    if not os.path.exists(CATEGORIES_FILE):
-        default = ["Miscellaneous", "Food", "Transport", "Bills", "Entertainment"]
-        with open(CATEGORIES_FILE, "w") as f:
-            json.dump(default, f, indent=4)
-        return default
-    with open(CATEGORIES_FILE, "r") as f:
-        return json.load(f)
-
-
+YEARLY_DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage" / "YearlySpending"
+YEARLY_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_month_file(month, year):
     return DATA_DIR / f"{year}_{month}.json"
 
 
-
-
 def load_month_data(month, year):
     file_name = get_month_file(month, year)
-    if os.path.exists(file_name):
-        with open(file_name, "r") as f:
-            return json.load(f)
-    return []
 
+    if not os.path.exists(file_name):
+        return {
+            "summary": {
+                "total_income": 0,
+                "total_expense": 0,
+                "net_total": 0
+            },
+            "entries": []
+        }
 
+    with open(file_name, "r") as f:
+        data = json.load(f)
+
+    if isinstance(data, list):
+        return {
+            "summary": {
+                "total_income": 0,
+                "total_expense": 0,
+                "net_total": 0
+            },
+            "entries": data
+        }
+
+    return data
 
 
 def save_month_data(month, year, data):
     file_name = get_month_file(month, year)
+    file_name.parent.mkdir(parents=True, exist_ok=True)
+
     with open(file_name, "w") as f:
         json.dump(data, f, indent=4)
 
 
+def get_month_files(year):
+    return sorted(DATA_DIR.glob(f"{year}_*.json"))
+
+
+def build_year_summary(year):
+    yearly_data = {
+        "year": year,
+        "total_income": 0.0,
+        "total_expense": 0.0,
+        "net_total": 0.0,
+        "months": {}
+    }
+
+    for file in get_month_files(year):
+        try:
+            with open(file, "r") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
+
+        summary = data.get("summary", {})
+
+        try:
+            month_name = file.stem.split("_", 1)[1]
+        except IndexError:
+            continue
+
+        income = float(summary.get("total_income", 0))
+        expense = float(summary.get("total_expense", 0))
+        net = float(summary.get("net_total", income - expense))
+
+        yearly_data["months"][month_name] = {
+            "income": income,
+            "expense": expense,
+            "net": net
+        }
+
+        yearly_data["total_income"] += income
+        yearly_data["total_expense"] += expense
+        yearly_data["net_total"] += net
+
+    yearly_data["total_income"] = round(yearly_data["total_income"], 2)
+    yearly_data["total_expense"] = round(yearly_data["total_expense"], 2)
+    yearly_data["net_total"] = round(yearly_data["net_total"], 2)
+
+    return yearly_data
+
+
+def save_year_file(year):
+    yearly_summary = build_year_summary(year)
+    file_path = YEARLY_DATA_DIR / f"{year}.json"
+
+    with open(file_path, "w") as f:
+        json.dump(yearly_summary, f, indent=4)
+
+
+def calculate_summary(entries):
+    income = 0
+    expense = 0
+
+    for e in entries:
+        amount = float(e.get("amount", 0))
+
+        if e.get("type") == "Income":
+            income += amount
+        else:
+            expense += amount
+
+    return {
+        "total_income": round(income, 2),
+        "total_expense": round(expense, 2),
+        "net_total": round(income - expense, 2)
+    }
 
 
 def create_tab(notebook):
-    frame = ttk.Frame(notebook)
+    frame = ctk.CTkFrame(notebook)
     notebook.add(frame, text="Monthly Spending")
 
-
     months = [
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     ]
 
     current_year = datetime.now().year
-    years = [str(y) for y in range(current_year - 10, current_year)]
+    years = [str(y) for y in range(current_year - 10, current_year + 1)]
 
-    categories = load_categories()
-    current_data = []
+    container = ctk.CTkFrame(frame)
+    container.grid(row=0, column=0, sticky="nsew", padx=20, pady=20)
 
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_columnconfigure(0, weight=1)
+    container.grid_columnconfigure(0, weight=1)
+    container.grid_columnconfigure(1, weight=1)
 
-    # ===== Live current date/time display =====
-    time_label = ttk.Label(frame, text="", font=("Arial", 10))
-    time_label.pack(pady=5)
-
-
-    def update_time():
-        now = datetime.now()
-        formatted = now.strftime("%B %d, %Y | %I:%M:%S %p")
-        time_label.config(text=formatted)
-        frame.after(1000, update_time)
-
-
-    update_time()
-
-
-    # ===== Container frame for inputs, listbox, and save button =====
-    container = ttk.Frame(frame)
-    container.pack(expand=True, fill='both', pady=5)
-
-
-    # ===== Input frame centered =====
-    input_frame = ttk.Frame(container)
-    input_frame.pack(pady=5)
-
-    # Year dropdown
-    tk.Label(input_frame, text="Select Year:").pack(pady=2)
-    year_combo = ttk.Combobox(input_frame, values=years, state="readonly")
-    year_combo.pack(pady=2)
+    ctk.CTkLabel(container, text="Select Year:").grid(row=0, column=0, sticky="e", pady=5)
+    year_combo = ctk.CTkComboBox(container, values=years, width=200)
+    year_combo.grid(row=0, column=1, sticky="w", pady=5)
     year_combo.set(str(current_year))
 
-    # Month dropdown
-    tk.Label(input_frame, text="Select Month:").pack(pady=2)
-    month_combo = ttk.Combobox(input_frame, values=months, state="readonly")
-    month_combo.pack(pady=2)
-    current_month = datetime.now().strftime("%B")
-    month_combo.set(current_month)
+    ctk.CTkLabel(container, text="Select Month:").grid(row=1, column=0, sticky="e", pady=5)
+    month_combo = ctk.CTkComboBox(container, values=months, width=200)
+    month_combo.grid(row=1, column=1, sticky="w", pady=5)
+    month_combo.set(datetime.now().strftime("%B"))
 
-    # Expense or Income Drop Down
-    tk.Label(input_frame, text="Type:").pack(pady=2)
-    type_combo = ttk.Combobox(input_frame, values=["Expense", "Income"], state="readonly")
-    type_combo.pack(pady=2)
+    ctk.CTkLabel(container, text="Type:").grid(row=2, column=0, sticky="e", pady=5)
+    type_combo = ctk.CTkComboBox(container, values=["Expense", "Income"], width=200)
+    type_combo.grid(row=2, column=1, sticky="w", pady=5)
     type_combo.set("Expense")
 
-    # Category dropdown
-    tk.Label(input_frame, text="Category:").pack(pady=2)
-    category_combo = ttk.Combobox(input_frame, values=categories, state="readonly")
-    category_combo.pack(pady=2)
-    category_combo.set("Miscellaneous")
+    from categories_tab import load_categories
+    categories = load_categories()
 
-    # ===== NEW: Refresh categories dynamically =====
-    def refresh_categories(event=None):
-        current = category_combo.get()
-        new_categories = load_categories()
-        category_combo["values"] = new_categories
+    ctk.CTkLabel(container, text="Category:").grid(row=3, column=0, sticky="e", pady=5)
+    category_combo = ctk.CTkComboBox(container, values=categories, width=200)
+    category_combo.grid(row=3, column=1, sticky="w", pady=5)
+    category_combo.set(categories[0] if categories else "Misc")
 
-        if current in new_categories:
-            category_combo.set(current)
-        else:
-            category_combo.set(new_categories[0] if new_categories else "")
+    ctk.CTkLabel(container, text="Amount:").grid(row=4, column=0, sticky="e", pady=5)
+    amount_entry = ctk.CTkEntry(container, width=200)
+    amount_entry.grid(row=4, column=1, sticky="w", pady=5)
 
-    category_combo.bind("<Button-1>", refresh_categories)
+    result_label = ctk.CTkLabel(container, text="")
+    result_label.grid(row=5, column=0, columnspan=2, pady=10)
 
-    # Expense amount
-    tk.Label(input_frame, text="Expense Amount:").pack(pady=2)
-    amount_entry = ttk.Entry(input_frame)
-    amount_entry.pack(pady=2)
+    listbox = ctk.CTkTextbox(container, width=450, height=250)
+    listbox.grid(row=6, column=0, columnspan=2, pady=10)
 
-
-    # Result label
-    result = tk.Label(input_frame, text="")
-    result.pack(pady=2)
-
-
-    # ===== Listbox =====
-    listbox_frame = ttk.Frame(container)
-    listbox_frame.pack(fill='both', expand=True, pady=5)
-    listbox = tk.Listbox(listbox_frame)
-    listbox.pack(fill='both', expand=True)
-
+    data = load_month_data(month_combo.get(), int(year_combo.get()))
+    current_data = data["entries"]
 
     def refresh_list():
-        listbox.delete(0, tk.END)
-        total = 0
-        for expense in current_data:
-            amount = expense["amount"]
-            category = expense["category"]
-            time_str = expense.get("time", "")
-            total += amount
-            listbox.insert(tk.END, f"${amount:.2f} - {category} ({time_str})")
-        if current_data:
-            listbox.insert(tk.END, f"--- Total: ${total:.2f} ---")
+        listbox.configure(state="normal")
+        listbox.delete("0.0", "end")
 
+        summary = data.get(
+            "summary",
+            {
+                "total_income": 0,
+                "total_expense": 0,
+                "net_total": 0
+            }
+        )
 
-    def on_month_change(event):
-        nonlocal current_data
-        month = month_combo.get()
-        year = datetime.now().year
-        current_data = load_month_data(month, year)
+        listbox.insert("end", f"📊 Income:  ${summary['total_income']:.2f}\n")
+        listbox.insert("end", f"📉 Expense: ${summary['total_expense']:.2f}\n")
+        listbox.insert("end", f"💰 Net:     ${summary['net_total']:.2f}\n")
+        listbox.insert("end", "-----------------------------\n\n")
+
+        for i, e in enumerate(current_data):
+            sign = "-" if e["type"] == "Expense" else "+"
+            amount = float(e.get("amount", 0))
+
+            listbox.insert(
+                "end",
+                f"{i}: {sign}${amount:.2f} - {e['category']} ({e['type']}) ({e['time']})\n"
+            )
+
+        listbox.configure(state="disabled")
+
+    def save_all():
+        selected_year = int(year_combo.get())
+
+        data["summary"] = calculate_summary(current_data)
+        save_month_data(month_combo.get(), selected_year, data)
+
+        # Updates yearly file every time monthly data is saved
+        save_year_file(selected_year)
+
+    def load_selected_month(event=None):
+        nonlocal data, current_data
+
+        data = load_month_data(month_combo.get(), int(year_combo.get()))
+        current_data = data["entries"]
+
         refresh_list()
 
-
-    def save_expense():
-        nonlocal current_data
+    def save_entry():
         now = datetime.now()
-        value = amount_entry.get()
-        category = category_combo.get() or "Miscellaneous"
-        month = month_combo.get()
-        year = now.year
-        timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
-
 
         try:
-            amount = float(value)
-            current_data = load_month_data(month, year)
+            amount = float(amount_entry.get())
+
+            if amount < 0:
+                result_label.configure(text="Positive numbers only.")
+                return
+
             current_data.append({
                 "amount": amount,
-                "category": category,
-                "time": timestamp
+                "category": category_combo.get(),
+                "type": type_combo.get(),
+                "time": now.strftime("%Y-%m-%d %H:%M:%S")
             })
-            save_month_data(month, year, current_data)
+
+            save_all()
             refresh_list()
-            result.config(text=f"Saved ${amount:.2f} ({category})")
-            amount_entry.delete(0, tk.END)
+
+            amount_entry.delete(0, "end")
+            result_label.configure(text="Saved! Yearly summary updated.")
+
         except ValueError:
-            result.config(text="Enter a valid number.")
+            result_label.configure(text="Invalid number.")
 
+    def delete_entry_func():
+        try:
+            index = int(delete_entry.get())
 
-    month_combo.bind("<<ComboboxSelected>>", on_month_change)
+            if index < 0 or index >= len(current_data):
+                result_label.configure(text="Invalid index.")
+                return
 
+            current_data.pop(index)
 
-    # ===== Save Button (always visible below listbox) =====
-    save_button = ttk.Button(container, text="Save Expense", command=save_expense)
-    save_button.pack(pady=5)
+            save_all()
+            refresh_list()
 
+            result_label.configure(text="Deleted entry. Yearly summary updated.")
+            delete_entry.delete(0, "end")
+
+        except ValueError:
+            result_label.configure(text="Enter valid index.")
+
+    ctk.CTkLabel(container, text="Delete Index:").grid(row=7, column=0, sticky="e", pady=5)
+    delete_entry = ctk.CTkEntry(container, width=200)
+    delete_entry.grid(row=7, column=1, sticky="w", pady=5)
+
+    ctk.CTkButton(
+        container,
+        text="Save Entry",
+        command=save_entry
+    ).grid(row=8, column=0, columnspan=2, pady=5)
+
+    ctk.CTkButton(
+        container,
+        text="Delete Entry",
+        fg_color="red",
+        command=delete_entry_func
+    ).grid(row=9, column=0, columnspan=2, pady=5)
+
+    month_combo.configure(command=load_selected_month)
+    year_combo.configure(command=load_selected_month)
+
+    load_selected_month()
 
     return frame
