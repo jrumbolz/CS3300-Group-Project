@@ -39,9 +39,8 @@ def load_month_data(month, year):
     # Ignores the summary section
     return data.get("entries", [])
 
-
+# Converts CustomTkinter color values into a format matplotlib can use
 def ctk_color_to_rgba(color):
-    # Converts CustomTkinter color values into a format matplotlib can use
 
     # If color is a tuple, it may contain RGB or RGBA values
     if isinstance(color, tuple):
