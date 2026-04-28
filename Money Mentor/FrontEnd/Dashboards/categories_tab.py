@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 # Creates path for storing category data
 # Example:
-# BackEnd/Data Storage/
+# /Users/YourName/Desktop/MoneyMentor/BackEnd/Data Storage/
 DATA_DIR = BASE_DIR / "BackEnd" / "Data Storage"
 
 # Creates folder if it doesn't already exist
@@ -25,6 +25,10 @@ FILE_NAME = DATA_DIR / "categories.json"
 # Default category that always exists
 # Prevents the app from having zero categories
 DEFAULT_CATEGORY = "Miscellaneous"
+
+
+# Bumped whenever categories are saved so other tabs know to refresh
+CATEGORY_VERSION = 0
 
 
 # -----------------------------------
@@ -61,6 +65,8 @@ def load_categories():
 # Save categories to JSON file
 # -----------------------------------
 def save_categories(categories):
+    # Uses global variable to track category version
+    global CATEGORY_VERSION
 
     # Prevents accidental deletion of default category
     if DEFAULT_CATEGORY not in categories:
@@ -69,6 +75,9 @@ def save_categories(categories):
     # Saves category list to JSON file
     with open(FILE_NAME, "w") as f:
         json.dump(categories, f, indent=4)
+
+    # Increments category version as signal for tabs to refresh
+    CATEGORY_VERSION += 1
 
 
 # -----------------------------------

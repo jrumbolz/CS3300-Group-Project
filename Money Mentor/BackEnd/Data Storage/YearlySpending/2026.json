@@ -1,13 +1,13 @@
 {
     "year": 2026,
     "total_income": 2000.0,
-    "total_expense": 10300.0,
-    "net_total": -8300.0,
+    "total_expense": 4864.0,
+    "net_total": -2864.0,
     "months": {
         "April": {
             "income": 2000.0,
-            "expense": 9800.0,
-            "net": -7800.0
+            "expense": 4364.0,
+            "net": -2364.0
         },
         "March": {
             "income": 0.0,
